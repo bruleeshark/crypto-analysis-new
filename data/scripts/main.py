@@ -2,6 +2,7 @@ import requests
 import pandas as pd
 import mplfinance as mpf
 from matplotlib.dates import WeekdayLocator, DateFormatter
+import matplotlib.pyplot as plt
 
 def get_crypto_data(crypto_id, days):
     url = f"https://api.coingecko.com/api/v3/coins/{crypto_id}/market_chart?vs_currency=usd&days={days}"
@@ -29,32 +30,40 @@ def prepare_data(data):
     return df
 
 def plot_candlestick_chart(df, crypto_id):
+    # Set up the style
     mc = mpf.make_marketcolors(up='g', down='r', volume='b')
-    s = mpf.make_mpf_style(marketcolors=mc)
-    
+    s = mpf.make_mpf_style(marketcolors=mc, rc={'font.size': 8})
+
     # Create a WeekdayLocator for Mondays
     week_locator = WeekdayLocator(byweekday=0, interval=1)
     
     # Create custom x-axis formatter
     date_formatter = DateFormatter('%Y-%m-%d')
-    
-    # Additional style for grid
-    s.update({'xaxis': {'major_locator': week_locator,
-                       'major_formatter': date_formatter},
-             'xtick': {'rotation': 45, 'ha': 'right'},
-             'grid': {'alpha': 0.5}})
 
     # Create the plot
-    mpf.plot(df, type='candle', style=s, volume=True, 
-             title=f'\n{crypto_id.capitalize()} Price and Volume Over Time',
-             ylabel='Price (USD)',
-             ylabel_lower='Volume',
-             figratio=(12,8),
-             figscale=1.1,
-             axtitle='Date',
-             savefig=f"{crypto_id}_candlestick_chart.png",
-             show_nontrading=True,
-             tight_layout=True)
+    fig, axes = mpf.plot(df, type='candle', style=s, volume=True, 
+                         ylabel='Price (USD)',
+                         ylabel_lower='Volume',
+                         figratio=(16,9),
+                         figscale=1.2,
+                         returnfig=True,
+                         show_nontrading=True,
+                         tight_layout=True)
+
+    # Customize the plot after it's created
+    ax_main = axes[0]
+    ax_main.set_title(f"{crypto_id.capitalize()} Price and Volume Over Time", fontsize=16, pad=20)
+    ax_main.xaxis.set_major_locator(week_locator)
+    ax_main.xaxis.set_major_formatter(date_formatter)
+    ax_main.grid(True, which='major', axis='x', linestyle='--', alpha=0.5)
+    
+    # Rotate x-axis labels
+    plt.setp(ax_main.get_xticklabels(), rotation=45, ha='right')
+
+    # Adjust layout and save
+    plt.tight_layout()
+    plt.savefig(f"{crypto_id}_candlestick_chart.png", dpi=300, bbox_inches='tight')
+    plt.close(fig)
 
 if __name__ == "__main__":
     crypto_id = "ethereum"
